@@ -7,35 +7,50 @@ on:
     branches: [ main ]
 
 jobs:
-  laravel-tests:
+  tests:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: curl, mbstring, zip, xml, bcmath, intl
-        coverage: none
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, intl, xml, zip, curl
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      - name: Install Composer dependencies
+        run: composer install --no-progress --no-suggest --optimize-autoloader --no-dev
 
-    - name: Prepare Laravel Application
-      run: |
-        cp .env.example .env
-        php artisan key:generate
+      - name: Copy .env for testing
+        run: cp .env.example .env
 
-    - name: Code style check (Pint)
-      run: ./vendor/bin/pint --test
+      - name: Generate app key
+        run: php artisan key:generate
 
-    - name: Run tests (PHPUnit)
-      run: ./vendor/bin/phpunit --coverage-text
+      - name: Setup SQLite database
+        run: |
+          touch database/database.sqlite
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=database\/database.sqlite/' .env
 
-    - name: Build assets (Vite)
-      run: |
-        npm install
-        npm run build
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Code style check (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Run tests
+        run: ./vendor/bin/phpunit --coverage-text
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install NPM dependencies
+        run: npm install
+
+      - name: Build assets
+        run: npm run build

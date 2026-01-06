@@ -21,7 +21,7 @@ jobs:
           extensions: mbstring, bcmath, intl, xml, zip, curl
 
       - name: Install Composer dependencies
-        run: composer install --no-progress --no-suggest --optimize-autoloader --no-dev
+        run: composer install --no-progress --no-suggest --optimize-autoloader
 
       - name: Copy .env for testing
         run: cp .env.example .env
@@ -31,9 +31,10 @@ jobs:
 
       - name: Setup SQLite database
         run: |
+          mkdir -p database
           touch database/database.sqlite
-          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
-          sed -i 's/DB_DATABASE=.*/DB_DATABASE=database\/database.sqlite/' .env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/g' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=database\/database.sqlite/g' .env
 
       - name: Run migrations
         run: php artisan migrate --force
@@ -41,7 +42,7 @@ jobs:
       - name: Code style check (Pint)
         run: ./vendor/bin/pint --test
 
-      - name: Run tests
+      - name: Run tests (PHPUnit)
         run: ./vendor/bin/phpunit --coverage-text
 
       - name: Setup Node.js
@@ -50,7 +51,7 @@ jobs:
           node-version: '22'
 
       - name: Install NPM dependencies
-        run: npm install
+        run: npm ci   # npm ci بہتر ہے CI میں (تیز اور مستحکم)
 
-      - name: Build assets
+      - name: Build assets (Vite)
         run: npm run build

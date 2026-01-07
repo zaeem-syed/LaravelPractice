@@ -19,7 +19,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --silent"
+          --health-cmd="mysqladmin ping -uroot -pZaeem@1234 --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -41,17 +41,17 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
-          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/g' .env
-          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/g' .env
-          sed -i 's/DB_PORT=.*/DB_PORT=3306/g' .env
-          sed -i 's/DB_DATABASE=.*/DB_DATABASE=laravel/g' .env
-          sed -i 's/DB_USERNAME=.*/DB_USERNAME=laravel/g' .env
-          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=secret/g' .env
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+          sed -i 's/DB_HOST=.*/DB_HOST=mysql/' .env
+          sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=laravel/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=Zaeem@1234/' .env
 
       - name: Wait for MySQL to be ready
         run: |
           for i in {1..15}; do
-            if mysqladmin ping -h"127.0.0.1" --silent; then
+            if mysqladmin ping -h"mysql" -uroot -pZaeem@1234 --silent; then
               echo "MySQL is up!"
               break
             fi

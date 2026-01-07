@@ -10,6 +10,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: laravel
+          MYSQL_USER: laravel
+          MYSQL_PASSWORD: secret
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,7 +34,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, bcmath, intl, xml, zip, curl, sqlite3
+          extensions: mbstring, bcmath, intl, xml, zip, curl, mysql
 
       - name: Install Composer dependencies
         run: composer install --no-progress --no-suggest --optimize-autoloader
@@ -27,13 +43,23 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/g' .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/g' .env
+          sed -i 's/DB_PORT=.*/DB_PORT=3306/g' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=laravel/g' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=laravel/g' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=secret/g' .env
 
-      - name: Setup SQLite
+      - name: Wait for MySQL to be ready
         run: |
-          mkdir -p database
-          touch database/database.sqlite
-          sed -i 's/DB_CONNECTION=mysql/DB_CONNECTION=sqlite/g' .env
-          sed -i 's/DB_DATABASE=laravel/DB_DATABASE=database\/database.sqlite/g' .env
+          for i in {1..15}; do
+            if mysqladmin ping -h"127.0.0.1" --silent; then
+              echo "MySQL is up!"
+              break
+            fi
+            echo "Waiting for MySQL..."
+            sleep 5
+          done
 
       - name: Run migrations
         run: php artisan migrate --force

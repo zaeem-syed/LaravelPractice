@@ -3,8 +3,10 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+         "dev": "vite",
+        "serve": "php artisan serve",
+        "octane": "php artisan octane:start --watch",
+        "all": "npm-run-all --parallel dev serve octane"
     },
     "devDependencies": {
         "@popperjs/core": "^2.11.8",
